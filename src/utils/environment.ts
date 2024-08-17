@@ -11,6 +11,10 @@ interface IEnvironmentProps {
     jwt_secret: Secret;
     email: string;
     email_pass: string;
+    aws_access_key: string;
+    aws_access_key_id: string;
+    aws_s3_bucket_name: string;
+    aws_s3_region: string;
 }
 
 export const envData: IEnvironmentProps = {
@@ -23,4 +27,8 @@ export const envData: IEnvironmentProps = {
     jwt_secret: process.env.jwt_secret as Secret || '' as Secret,
     email: process.env.email || '',
     email_pass: process.env.email_pass || '',
+    aws_access_key: process.env.AWS_ACCESS_KEY as string,
+    aws_access_key_id: process.env.AWS_ACCESS_KEY_ID as string,
+    aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME as string,
+    aws_s3_region: process.env.AWS_BUCKET_REGION as string
 }

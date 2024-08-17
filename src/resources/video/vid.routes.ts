@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateJWT, upload } from '../../utils';
+import { authenticateJWT, upload, uploadToS3 } from '../../utils';
 import { MovieController } from './vid.controller';
 export class MovieRoutes {
     public router: Router;
@@ -20,6 +20,7 @@ export class MovieRoutes {
         this.router.delete(`/:movie_id`, authenticateJWT, this.movieController.deleteMovie);
         this.router.put(`/category/add/:movie_id`, authenticateJWT, this.movieController.addCategory);
         this.router.put(`/category/remove/:movie_id`, authenticateJWT, this.movieController.removeCategory);
-        this.router.post(`/upload/:movie_id`, authenticateJWT, upload.single('file'), this.movieController.uploadVideo);
+        // this.router.post(`/upload/:movie_id`, authenticateJWT, upload.single('file'), this.movieController.uploadVideo);
+        this.router.post(`/upload/:movie_id`, uploadToS3.single('file'), this.movieController.uploadVideo);
     }
 }

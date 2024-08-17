@@ -1,6 +1,10 @@
 import multer from "multer";
 import path from "path";
-
+import multerS3 from 'multer-s3';
+import { envData } from "./environment";
+import { S3Client } from '@aws-sdk/client-s3';
+import { Request, Response } from 'express';
+import { uploadFileToS3 } from "./s3_helper";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -24,3 +28,28 @@ const storage = multer.diskStorage({
 })
 
 export const upload = multer({ storage: storage })
+
+export const uploadToS3 = multer({
+    storage: multerS3({
+        s3: new S3Client({
+            credentials: {
+                accessKeyId: envData.aws_access_key_id,  // Use environment variables for security
+                secretAccessKey: envData.aws_access_key
+            },
+            region: envData.aws_s3_region  // Example: 'us-east-1
+        }),
+        acl: 'public-read',
+        bucket: envData.aws_s3_bucket_name,  // The name of your S3 bucket
+        metadata: (req: Request, file: Express.Multer.File, cb) => {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: (req: Request, file: Express.Multer.File, cb) => {
+            // Define the key (filename in S3)
+            const fileExtension = path.extname(file.originalname);
+            const filename = `${Date.now().toString()}${fileExtension}`; // Unique filename
+            const key = `videos/${filename}`;
+            cb(null, key);
+        },
+
+    })
+});

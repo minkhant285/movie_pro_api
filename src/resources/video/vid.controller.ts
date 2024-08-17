@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { Like, Repository } from 'typeorm';
-import { AppDataSource, ReturnPayload, STATUS_MESSAGE } from '../../utils';
+import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE } from '../../utils';
 import { Movie } from './vid.entity';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
 import { File } from 'buffer';
-import { generateThumbnail } from '../../utils/ffmpeg';
 import path from 'path';
+import { uploadFileToS3 } from '../../utils/s3_helper';
+import { generateThumbnail } from '../../utils/ffmpeg';
 
 type MovieUpdateProp = {
     name: string;
@@ -48,14 +49,14 @@ export class MovieController {
 
     uploadVideo = async (req: Request, res: Response) => {
         let id: string = req.params.movie_id as string;
-        const filepath = req.file?.filename.toString() as string;
+        const fileUrl = (req.file as any).location;
         // '00:01:30'; // HH:MM:SS format (e.g., 1 minute and 30 seconds into the video)
-        const poster_url = await generateThumbnail(path.join(__dirname, '../../assets/videos', filepath), path.join(__dirname, '../../assets/images'), filepath)
-
-
+        // const poster_url = await generateThumbnail(fileUrl, `${req.file?.filename}.png` as string)
+        await generateThumbnail(fileUrl, `${req.file?.filename}.png` as string)
+        // console.log(poster_url);
         let updated = await this.movieRepo.update(id, {
-            url: req.file?.filename.toString() || '',
-            thumbnail_url: poster_url
+            url: fileUrl,
+            // thumbnail_url: poster_url
         });
         if (updated.affected !== 1) {
             return res.status(400).json(ReturnPayload({
@@ -68,7 +69,7 @@ export class MovieController {
             message: 'Video Uploaded!',
             status_code: res.statusCode,
             status_message: STATUS_MESSAGE.SUCCESS,
-            result: req.file?.filename.toString()
+            result: fileUrl
         }));
     }
 
