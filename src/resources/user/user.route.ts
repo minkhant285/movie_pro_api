@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserController } from './user.controller';
-import { authenticateJWT, upload } from '../../utils';
+import { authenticateJWT, uploadToLocal } from '../../utils';
 export class UserRoutes {
     public router: Router;
     private userController: UserController = new UserController();
@@ -17,7 +17,7 @@ export class UserRoutes {
         this.router.put(`/`, authenticateJWT, this.userController.updateUser);
         this.router.put(`/change_phone`, authenticateJWT, this.userController.updatePhone);
         this.router.put(`/change_email`, authenticateJWT, this.userController.updateEmail);
-        this.router.put('/photo', authenticateJWT, upload.single('file'), this.userController.updatePhoto);
+        this.router.put('/photo', authenticateJWT, uploadToLocal.single('file'), this.userController.updatePhoto);
         this.router.delete(`/`, authenticateJWT, this.userController.deleteUser);
 
     }

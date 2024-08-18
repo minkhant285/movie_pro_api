@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateJWT, upload } from '../../utils';
+import { authenticateJWT } from '../../utils';
 import { AuthController } from './auth.controller';
 export class AuthRoutes {
     public router: Router;

@@ -4,10 +4,7 @@ import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE } from '../../uti
 import { Movie } from './vid.entity';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
-import { File } from 'buffer';
-import path from 'path';
-import { uploadFileToS3 } from '../../utils/s3_helper';
-import { generateThumbnail } from '../../utils/ffmpeg';
+import { generateThumbnailAndUploadToS3 } from '../../utils/ffmpeg';
 
 type MovieUpdateProp = {
     name: string;
@@ -52,11 +49,11 @@ export class MovieController {
         const fileUrl = (req.file as any).location;
         // '00:01:30'; // HH:MM:SS format (e.g., 1 minute and 30 seconds into the video)
         // const poster_url = await generateThumbnail(fileUrl, `${req.file?.filename}.png` as string)
-        await generateThumbnail(fileUrl, `${req.file?.filename}.png` as string)
+        const { s3Url, width, height } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string)
         // console.log(poster_url);
         let updated = await this.movieRepo.update(id, {
             url: fileUrl,
-            // thumbnail_url: poster_url
+            thumbnail_url: s3Url
         });
         if (updated.affected !== 1) {
             return res.status(400).json(ReturnPayload({
@@ -69,7 +66,10 @@ export class MovieController {
             message: 'Video Uploaded!',
             status_code: res.statusCode,
             status_message: STATUS_MESSAGE.SUCCESS,
-            result: fileUrl
+            result: {
+                fileUrl,
+                thumbnail_url: s3Url
+            }
         }));
     }
 
