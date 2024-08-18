@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
 
@@ -25,7 +25,6 @@ export class Movie {
     @Column({ default: 0 })
     view_count: number;
 
-
     @Column({ nullable: true })
     thumbnail_url?: string;
 
@@ -35,6 +34,9 @@ export class Movie {
 
     @ManyToMany(() => User, user => user.favourites)
     favourites: User[];
+
+    @ManyToOne(() => User, user => user.favourites)
+    created_user: User;
 
     @CreateDateColumn({ default: () => 'CURRENT_TIMESTAMP', type: 'timestamp' })
     created_at: Date;

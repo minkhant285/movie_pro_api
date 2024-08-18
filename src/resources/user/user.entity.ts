@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
 import bcrypt from 'bcrypt';
 import { Movie } from '../video/vid.entity';
 
@@ -40,6 +40,9 @@ export class User {
     @ManyToMany(() => Movie, movie => movie.favourites, { cascade: true })
     @JoinTable()
     favourites?: Movie[];
+
+    @ManyToOne(() => Movie, mv => mv.created_user, { cascade: true })
+    own_movies: Movie[];
 
     @Column({ nullable: true, type: "timestamp", select: false })
     resetPasswordExpires: Date;

@@ -19,6 +19,7 @@ type MovieUpdateProp = {
 type MovieCreateProp = {
     categories?: Category[];
     favourites?: User[];
+    created_user?: Partial<User>;
 } & MovieUpdateProp;
 
 export class MovieController {
@@ -34,7 +35,7 @@ export class MovieController {
 
 
     getAllMovies = async (req: Request, res: Response) => {
-        let movies = await this.movieRepo.find({ relations: ['categories'] });
+        let movies = await this.movieRepo.find({ relations: { categories: true, created_user: true } });
 
         return res.status(200).json(ReturnPayload({
             message: '',
@@ -118,6 +119,7 @@ export class MovieController {
 
     createMovie = async (req: Request, res: Response) => {
         const body = req.body as MovieCreateProp;
+        body.created_user = { id: req.params.id as string };
         const created = await this.movieRepo.save(body);
         // return response
         return res.status(200).json(ReturnPayload({
