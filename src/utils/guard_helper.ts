@@ -4,7 +4,7 @@ import { ReturnPayload, STATUS_MESSAGE } from './return_payload';
 
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.authorization?.split(' ')[1] || "";
-    if (token) {
+    if (token !== "undefined") {
         const decoded: any = decodeToken(req.headers.authorization || "");
         const payload = verifyToken(token);
         if (payload && decoded) {

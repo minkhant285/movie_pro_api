@@ -8,19 +8,24 @@ import { AuthRoutes, UserRoutes } from './resources';
 import { swaggerUi, swaggerSpec } from './swagger/swaggerConfig';
 import { MovieRoutes } from './resources/video/vid.routes';
 import { CategoryRoutes } from './resources/category/category.routes';
+import { Server as SocketServer } from 'socket.io';
+import http from 'http';
+
+
 
 const options: cors.CorsOptions = {
     origin: '*'
 };
 const apiPrefix = '/api/v1';
-class Server {
+export class Server {
     public app: express.Application;
+    public server: http.Server;
+    public io: SocketServer;
 
     constructor() {
         this.app = express();
-        this.config();
-        this.routes();
-        this.DBinit();
+        this.server = http.createServer(this.app);
+        this.io = new SocketServer(this.server, { cors: { origin: '*' } });
     }
 
     private config() {
@@ -31,7 +36,11 @@ class Server {
     }
 
     public routes(): void {
-        this.app.get("/", (req, res) => res.send('Base API V1.0'))
+        // this.app.get("/", (req, res) => res.send('Base API V1.0'))
+        this.app.get('/', (req, res) => {
+            res.sendFile(__dirname + '/test.html');
+        });
+
         this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
         this.app.use("/image", express.static(path.join(__dirname, 'assets/images')));
         this.app.use("/video", express.static(path.join(__dirname, 'assets/videos')));
@@ -49,9 +58,23 @@ class Server {
     }
 
     public start(): void {
+        this.config();
+        this.routes();
+        this.DBinit();
+        this.SocketServerConnection()
         this.app.listen(this.app.get("port"), () => {
-            console.log(`ITVerse API Service is Running`, this.app.get("port"))
+            this.io.listen(50002);
+            console.log(`ITVerse API Service is Running ${this.app.get("port")} & socket server running at ${50002}`)
         })
+    }
+
+    private async SocketServerConnection() {
+        this.io.on('connection', (socket) => {
+            console.log('a user connected');
+            socket.on('disconnect', () => {
+                console.log('user disconnected');
+            });
+        });
     }
 
     private async DBinit() {

@@ -3,23 +3,25 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import AWS from 'aws-sdk';
 import { envData } from './environment';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-AWS.config.update({
-    accessKeyId: envData.aws_access_key_id,
-    secretAccessKey: envData.aws_access_key,
-    region: envData.aws_s3_region,
-});
 
-export const s3 = new AWS.S3();
+export const s3 = new S3Client({
+    region: envData.aws_s3_region,
+    credentials: {
+        accessKeyId: envData.aws_access_key_id,
+        secretAccessKey: envData.aws_access_key,
+    }
+})
 
 
 export async function generateThumbnailAndUploadToS3(
     videoUrl: string,
     s3Key: string,
-    timestamp: string = '50%',
+    timestamp: string = '10%',
 ): Promise<{ s3Url: string; width: number; height: number }> {
     return new Promise((resolve, reject) => {
         // Create a temporary directory to store the thumbnail
@@ -48,29 +50,44 @@ export async function generateThumbnailAndUploadToS3(
                             // Read the generated thumbnail file into a buffer
                             const buffer = fs.readFileSync(thumbnailPath);
 
-                            // Upload the buffer to S3
-                            const params = {
+
+
+                            s3.send(new PutObjectCommand({
                                 Bucket: envData.aws_s3_bucket_name,
                                 Key: `thumbnails/${s3Key}.png`,
                                 Body: buffer,
                                 ContentType: 'image/png',
-                                ACL: 'public-read', // Optional: if you want the thumbnail to be publicly accessible
-                            };
+                                ACL: 'public-read'
+                            }),
+                                // (err: any, data: any) => {
+                                //     // Clean up the temporary file
+                                //     fs.unlinkSync(thumbnailPath);
 
-                            s3.upload(params, (err: any, data: any) => {
-                                // Clean up the temporary file
-                                fs.unlinkSync(thumbnailPath);
+                                //     if (err) {
+                                //         reject(err);
+                                //     } else {
+                                //         resolve({
+                                //             s3Url: data.Location,
+                                //             width: width,
+                                //             height: height,
+                                //         }); // Return the S3 URL and video resolution
+                                //     }
+                                // }
+                            );
 
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve({
-                                        s3Url: data.Location,
-                                        width: width,
-                                        height: height,
-                                    }); // Return the S3 URL and video resolution
-                                }
-                            });
+                            const command = new GetObjectCommand({
+                                Bucket: envData.aws_s3_bucket_name,
+                                Key: `thumbnails/${s3Key}.png`
+                            })
+
+                            const s3Url = await getSignedUrl(s3, command, { expiresIn: 36000 });
+                            fs.unlinkSync(thumbnailPath);
+
+                            resolve({
+                                s3Url: s3Url,
+                                width: width,
+                                height: height,
+                            }); //
                         } catch (err) {
                             reject(err);
                         }

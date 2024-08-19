@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload with Progress</title>
+</head>
+
+<body>
+    <input type="file" id="fileInput">
+    <button id="uploadButton">Upload</button>
+    <div id="progress"></div>
+    <div id="fileLink"></div>
+
+    <!-- Load the Socket.io client library -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // Initialize Socket.io client
+        const socket = io();
+
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/v1/movie/upload/9cae6d88-507a-4378-be7b-aeb0858ade0c', true);
+
+            // Add Socket.io ID to the request header
+            xhr.setRequestHeader('x-socket-id', socket.id);
+
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    document.getElementById('progress').innerText = `Upload Progress: ${percentComplete}%`;
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    document.getElementById('fileLink').innerHTML = `<a href="${response.url}">Download File</a>`;
+                } else {
+                    document.getElementById('progress').innerText = 'Upload failed!';
+                }
+            };
+
+            xhr.send(formData);
+        });
+
+        // Listen for upload progress updates from the server
+        socket.on('uploadProgress', (data) => {
+            if (data.progress) {
+                document.getElementById('progress').innerText = `Upload Progress: ${data.progress}%`;
+            }
+            if (data.error) {
+                document.getElementById('progress').innerText = `Error: ${data.error}`;
+            }
+        });
+    </script>
+    <video poster="https://bluemoviepro.s3.ap-southeast-1.amazonaws.com/thumbnails/thumbnail-1723970619213.png"
+        width="450" height="300" controls>
+        <source src="https://bluemoviepro.s3.ap-southeast-1.amazonaws.com/videos/1723970612133.mp4" />
+    </video>
+</body>
+
+</html>
