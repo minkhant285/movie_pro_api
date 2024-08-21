@@ -6,6 +6,8 @@ import os from 'os';
 import { envData } from './environment';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'typeorm/platform/PlatformTools';
+import tmp from 'tmp';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
@@ -35,13 +37,13 @@ export async function generateThumbnailAndUploadToS3(
                     return reject(err);
                 }
 
-                const width = metadata.streams[0].width as number;
-                const height = metadata.streams[0].height as number;
+                const width = metadata.streams[0].width as number || 332;
+                const height = metadata.streams[0].height as number || 640;
 
                 ffmpeg(videoUrl)
                     .screenshots({
                         timestamps: [timestamp],
-                        size: `${width}x${height}`, // Use the video resolution
+                        size: `?x1080`, // Use the video resolution
                         filename: path.basename(thumbnailPath),
                         folder: tempDir,
                     })
@@ -84,7 +86,7 @@ export async function generateThumbnailAndUploadToS3(
                             fs.unlinkSync(thumbnailPath);
 
                             resolve({
-                                s3Url: s3Url,
+                                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`,
                                 width: width,
                                 height: height,
                             }); //
@@ -98,3 +100,71 @@ export async function generateThumbnailAndUploadToS3(
             });
     });
 }
+
+export const streamFromReadableStream = (readableStream: ReadableStream<Uint8Array>): Readable => {
+    const { PassThrough } = require('stream');
+    const nodeStream = new PassThrough();
+
+    const reader = readableStream.getReader();
+    const pump = () => {
+        reader.read().then(({ done, value }) => {
+            if (done) {
+                nodeStream.end();
+                return;
+            }
+            nodeStream.write(Buffer.from(value));
+            pump();
+        }).catch(err => {
+            nodeStream.destroy(err);
+        });
+    };
+
+    pump();
+    return nodeStream;
+};
+
+// Function to get video resolution
+export const getVideoResolution = (readableStream: any): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+        // Create a temporary file
+        tmp.file({ postfix: '.mp4' }, (err, tempFilePath, fd, cleanupCallback) => {
+            if (err) {
+                return reject(err);
+            }
+
+            // Convert the ReadableStream to a Node.js Readable stream
+            const fileStream = streamFromReadableStream(readableStream);
+
+            // Write the file to the temporary file path
+            const writeStream = fs.createWriteStream(tempFilePath);
+            fileStream.pipe(writeStream);
+
+            writeStream.on('finish', () => {
+                // Get the video resolution using ffmpeg
+                ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+                    cleanupCallback(); // Cleanup temporary file
+
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    const videoStream = metadata.streams.find((stream: any) => stream.codec_type === 'video');
+
+                    if (videoStream) {
+                        resolve({
+                            width: videoStream.width || 0,
+                            height: videoStream.height || 0
+                        });
+                    } else {
+                        reject(new Error('No video stream found.'));
+                    }
+                });
+            });
+
+            writeStream.on('error', (error) => {
+                cleanupCallback(); // Cleanup temporary file
+                reject(error);
+            });
+        });
+    });
+};

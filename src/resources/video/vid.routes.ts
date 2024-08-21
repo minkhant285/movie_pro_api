@@ -20,6 +20,6 @@ export class MovieRoutes {
         this.router.delete(`/:movie_id`, authenticateJWT, this.movieController.deleteMovie);
         this.router.put(`/category/add/:movie_id`, authenticateJWT, this.movieController.addCategory);
         this.router.put(`/category/remove/:movie_id`, authenticateJWT, this.movieController.removeCategory);
-        this.router.post(`/upload`, this.movieController.uploadVideo);
+        this.router.post(`/upload`, authenticateJWT, this.movieController.uploadVideo);
     }
 }

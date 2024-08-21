@@ -74,17 +74,6 @@ export class MovieController {
                 const fileUrl = (req.file as any).location;
                 server.io.to(socketId as string).emit('uploadProgress', { progress: 100, url: fileUrl });
                 const { s3Url, width, height } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string);
-                // let updated = await this.movieRepo.update(id, {
-                //     url: fileUrl,
-                //     thumbnail_url: s3Url
-                // });
-                // if (updated.affected !== 1) {
-                //     return res.status(400).json(ReturnPayload({
-                //         message: 'Something Wrong In Uploading Video',
-                //         status_code: res.statusCode,
-                //         status_message: STATUS_MESSAGE.FAIL
-                //     }))
-                // }
                 return res.status(200).json(ReturnPayload({
                     message: 'Video Uploaded!',
                     status_code: res.statusCode,
