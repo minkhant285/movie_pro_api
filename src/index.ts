@@ -10,6 +10,7 @@ import { MovieRoutes } from './resources/video/vid.routes';
 import { CategoryRoutes } from './resources/category/category.routes';
 import { Server as SocketServer } from 'socket.io';
 import http from 'http';
+import { DecoCategoryRoutes } from './resources/decocategory/routes';
 
 
 
@@ -48,6 +49,7 @@ export class Server {
         this.app.use(`${apiPrefix}/auth`, new AuthRoutes().router);
         this.app.use(`${apiPrefix}/movie`, new MovieRoutes().router);
         this.app.use(`${apiPrefix}/category`, new CategoryRoutes().router);
+        this.app.use(`${apiPrefix}/deco`, new DecoCategoryRoutes().router);
         this.app.use((req, res, next) => {
             const error = new Error('No Route Found');
             return res.status(404).json({
