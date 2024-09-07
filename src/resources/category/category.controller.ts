@@ -46,7 +46,7 @@ export class CategoryController {
 
     searchCategories = async (req: Request, res: Response) => {
         let query: string = req.params.query;
-        let movies = await this.categoryRepo.findAndCount({ where: { name: Like(`%${query}%`) } });
+        let movies = await this.categoryRepo.findAndCount({ where: { name: Like(`%${query}%`) }, relations: { movies: true } });
         return res.status(200).json(ReturnPayload({
             message: '',
             status_code: res.statusCode,

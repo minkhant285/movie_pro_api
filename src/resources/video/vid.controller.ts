@@ -73,7 +73,7 @@ export class MovieController {
             if (req.file) {
                 const fileUrl = (req.file as any).location;
                 server.io.to(socketId as string).emit('uploadProgress', { progress: 100, url: fileUrl });
-                // const { s3Url, width, height } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string);
+                const { s3Url, width, height } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string);
                 return res.status(200).json(ReturnPayload({
                     message: 'Video Uploaded!',
                     status_code: res.statusCode,
