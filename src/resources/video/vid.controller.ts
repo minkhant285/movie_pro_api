@@ -155,14 +155,11 @@ export class MovieController {
 
     searchMovie = async (req: Request, res: Response) => {
         const query = req.params.query as string;
-        let movies = await this.movieRepo.find({
-            where: [
-                { name: Like(`%${query}%`) },
-                { caption: Like(`%${query}%`) },
-                { description: Like(`%${query}%`) }
-            ]
-            , relations: ['categories']
-        });
+        const movies = await this.movieRepo.createQueryBuilder('movie')
+            .leftJoinAndSelect('movie.categories', 'categories') // Include the relation
+            .where('LOWER(movie.name) LIKE LOWER(:name)', { name: `%${query}%` })
+            .orWhere('LOWER(movie.caption) LIKE LOWER(:caption)', { caption: `%${query}%` })
+            .getMany();
 
         return res.status(200).json(ReturnPayload({
             message: '',
