@@ -24,7 +24,7 @@ export async function generateThumbnailAndUploadToS3(
     videoUrl: string,
     s3Key: string,
     timestamp: string = '10%',
-): Promise<{ s3Url: string; width: number; height: number }> {
+): Promise<{ s3Url: string; }> {
     return new Promise((resolve, reject) => {
         // Create a temporary directory to store the thumbnail
         const tempDir = os.tmpdir();
@@ -36,9 +36,6 @@ export async function generateThumbnailAndUploadToS3(
                 if (err) {
                     return reject(err);
                 }
-
-                const width = metadata.streams[0].width as number || 332;
-                const height = metadata.streams[0].height as number || 640;
 
                 ffmpeg(videoUrl)
                     .screenshots({
@@ -77,19 +74,17 @@ export async function generateThumbnailAndUploadToS3(
                                 // }
                             );
 
-                            const command = new GetObjectCommand({
-                                Bucket: envData.aws_s3_bucket_name,
-                                Key: `thumbnails/${s3Key}.png`
-                            })
+                            // const command = new GetObjectCommand({
+                            //     Bucket: envData.aws_s3_bucket_name,
+                            //     Key: `thumbnails/${s3Key}.png`
+                            // })
 
-                            const s3Url = await getSignedUrl(s3, command, { expiresIn: 36000 });
-                            fs.unlinkSync(thumbnailPath);
+                            // const s3Url = await getSignedUrl(s3, command, { expiresIn: 36000 });
+                            // fs.unlinkSync(thumbnailPath);
 
                             resolve({
-                                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`,
-                                width: width,
-                                height: height,
-                            }); //
+                                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`
+                            });
                         } catch (err) {
                             reject(err);
                         }
