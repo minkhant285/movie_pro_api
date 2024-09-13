@@ -4,10 +4,10 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { envData } from './environment';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { Readable } from 'typeorm/platform/PlatformTools';
 import tmp from 'tmp';
+import { generateThumbnail } from './ffmpeg_thumbnail';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
@@ -25,74 +25,64 @@ export async function generateThumbnailAndUploadToS3(
     s3Key: string,
     timestamp: string = '10%',
 ): Promise<{ s3Url: string; }> {
+    await generateThumbnail(videoUrl, s3Key)
     return new Promise((resolve, reject) => {
         // Create a temporary directory to store the thumbnail
         const tempDir = os.tmpdir();
         const thumbnailPath = path.join(tempDir, `${s3Key}.png`);
 
-        // Extract video resolution and generate thumbnail
-        ffmpeg(videoUrl)
-            .ffprobe((err, metadata) => {
-                if (err) {
-                    return reject(err);
-                }
 
-                ffmpeg(videoUrl)
-                    .screenshots({
-                        timestamps: [timestamp],
-                        size: `?x1080`, // Use the video resolution
-                        filename: path.basename(thumbnailPath),
-                        folder: tempDir,
-                    })
-                    .on('end', async () => {
-                        try {
-                            // Read the generated thumbnail file into a buffer
-                            const buffer = fs.readFileSync(thumbnailPath);
+        try {
+            // Read the generated thumbnail file into a buffer
+            const buffer = fs.readFileSync(thumbnailPath);
 
+            s3.send(new PutObjectCommand({
+                Bucket: envData.aws_s3_bucket_name,
+                Key: `thumbnails/${s3Key}.png`,
+                Body: buffer,
+                ContentType: 'image/png',
+                ACL: 'public-read'
+            })
 
+            );
 
-                            s3.send(new PutObjectCommand({
-                                Bucket: envData.aws_s3_bucket_name,
-                                Key: `thumbnails/${s3Key}.png`,
-                                Body: buffer,
-                                ContentType: 'image/png',
-                                ACL: 'public-read'
-                            }),
-                                // (err: any, data: any) => {
-                                //     // Clean up the temporary file
-                                //     fs.unlinkSync(thumbnailPath);
+            // fs.unlinkSync(thumbnailPath);
 
-                                //     if (err) {
-                                //         reject(err);
-                                //     } else {
-                                //         resolve({
-                                //             s3Url: data.Location,
-                                //             width: width,
-                                //             height: height,
-                                //         }); // Return the S3 URL and video resolution
-                                //     }
-                                // }
-                            );
-
-                            // const command = new GetObjectCommand({
-                            //     Bucket: envData.aws_s3_bucket_name,
-                            //     Key: `thumbnails/${s3Key}.png`
-                            // })
-
-                            // const s3Url = await getSignedUrl(s3, command, { expiresIn: 36000 });
-                            // fs.unlinkSync(thumbnailPath);
-
-                            resolve({
-                                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`
-                            });
-                        } catch (err) {
-                            reject(err);
-                        }
-                    })
-                    .on('error', (err) => {
-                        reject(err);
-                    });
+            resolve({
+                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`
             });
+        } catch (err) {
+            console.log("big trouble in capturing", err);
+            reject(err);
+        }
+
+        // Extract video resolution and generate thumbnail
+        // ffmpeg(videoUrl)
+        //     .ffprobe((err, metadata) => {
+        //         if (err) {
+        //             console.log("big trouble in ffprobe", err);
+        //             return reject(err);
+        //         }
+
+        //         ffmpeg(videoUrl)
+        //             .screenshots({
+        //                 timestamps: [timestamp],
+        //                 size: `?x1080`, // Use the video resolution
+        //                 filename: path.basename(thumbnailPath),
+        //                 folder: tempDir,
+        //             })
+        //             .on('end', async () => {
+
+        //             })
+        //             .on('error', (err) => {
+        //                 console.log("big trouble in ffmpeg", err);
+        //                 console.log({
+        //                     filename: path.basename(thumbnailPath),
+        //                     folder: tempDir,
+        //                 })
+        //                 reject(err);
+        //             });
+        //     });
     });
 }
 
