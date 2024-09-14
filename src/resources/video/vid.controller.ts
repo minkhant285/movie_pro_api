@@ -43,13 +43,21 @@ export class MovieController {
 
 
     getAllMovies = async (req: Request, res: Response) => {
-        let movies = await this.movieRepo.find({ relations: { categories: true, created_user: true } });
+        const page = Number.parseInt(req.query.page as string || '1');
+        const limit = Number.parseInt(req.query.limit as string || '12');
+        const category = req.query.category_id as string;
+        let result;
+        if (category) {
+            result = await this.videoService.getVideosByPage(page, limit, category);
+        } else {
+            result = await this.videoService.getVideosByPage(page, limit);
+        }
 
         return res.status(200).json(ReturnPayload({
             message: '',
             status_code: res.statusCode,
             status_message: STATUS_MESSAGE.SUCCESS,
-            result: movies
+            result
         }));
     };
 
@@ -92,34 +100,6 @@ export class MovieController {
 
     }
 
-    // uploadVideo = async (req: Request, res: Response) => {
-    //     let id: string = req.params.movie_id as string;
-    //     const fileUrl = (req.file as any).location;
-    //     // '00:01:30'; // HH:MM:SS format (e.g., 1 minute and 30 seconds into the video)
-    //     // const poster_url = await generateThumbnail(fileUrl, `${req.file?.filename}.png` as string)
-    //     const { s3Url, width, height } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string)
-    //     // console.log(poster_url);
-    //     let updated = await this.movieRepo.update(id, {
-    //         url: fileUrl,
-    //         thumbnail_url: s3Url
-    //     });
-    //     if (updated.affected !== 1) {
-    //         return res.status(400).json(ReturnPayload({
-    //             message: 'Something Wrong In Uploading Video',
-    //             status_code: res.statusCode,
-    //             status_message: STATUS_MESSAGE.FAIL
-    //         }))
-    //     }
-    //     return res.status(200).json(ReturnPayload({
-    //         message: 'Video Uploaded!',
-    //         status_code: res.statusCode,
-    //         status_message: STATUS_MESSAGE.SUCCESS,
-    //         result: {
-    //             fileUrl,
-    //             thumbnail_url: s3Url
-    //         }
-    //     }));
-    // }
 
     getMoviesByCategory = async (req: Request, res: Response) => {
         const category_id = req.params.category_id as string;
