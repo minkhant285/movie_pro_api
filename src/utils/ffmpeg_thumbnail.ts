@@ -13,7 +13,7 @@ async function runFFmpegCommand(command: string): Promise<void> {
     }
 }
 
-export async function generateThumbnail(videoUrl: string, s3key: string) {
-    const command = `ffmpeg -i ${videoUrl} -ss 00:00:10 -vframes 1 /tmp/${s3key}`;
+export async function generateThumbnail(videoUrl: string, timestamp: string, thumbnailPath: string) {
+    const command = `ffmpeg -i ${videoUrl} -ss 00:00:10 -vframes 1 ${thumbnailPath}`;
     await runFFmpegCommand(command);
 }
