@@ -13,7 +13,7 @@ export class Movie {
     @Column()
     caption: string;
 
-    @Column()
+    @Column({ nullable: true })
     description: string;
 
     @Column({ type: 'varchar', nullable: false })
