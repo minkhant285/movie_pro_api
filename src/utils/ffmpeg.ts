@@ -2,10 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { envData } from './environment';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { Readable } from 'typeorm/platform/PlatformTools';
 import tmp from 'tmp';
 import { generateThumbnail } from './ffmpeg_thumbnail';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const s3 = new S3Client({
     region: envData.aws_s3_region,
@@ -75,6 +76,23 @@ export const streamFromReadableStream = (readableStream: ReadableStream<Uint8Arr
     pump();
     return nodeStream;
 };
+
+export const generateS3FileDownloadLink = async (key: string) => {
+    const command = new GetObjectCommand({
+        Bucket: envData.aws_s3_bucket_name, // Replace with your S3 bucket name
+        Key: `videos/${key}`
+    });
+    try {
+        // Generate a pre-signed URL that expires in 60 seconds
+        const url = await getSignedUrl(s3, command, { expiresIn: 600 });
+        return url;
+    } catch (error) {
+        return "Error generating pre-signed URL";
+    }
+
+}
+
+
 
 // Function to get video resolution
 // export const getVideoResolution = (readableStream: any): Promise<{ width: number; height: number }> => {

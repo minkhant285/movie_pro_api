@@ -4,7 +4,7 @@ import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE, uploadToS3 } fro
 import { Movie } from './vid.entity';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
-import { generateThumbnailAndUploadToS3 } from '../../utils/ffmpeg';
+import { generateS3FileDownloadLink, generateThumbnailAndUploadToS3 } from '../../utils/ffmpeg';
 import { Server } from '../..';
 import { validate } from 'uuid';
 import { VideoService } from './vid.service';
@@ -17,6 +17,7 @@ export type MovieUpdateProp = {
     likes?: number;
     view_count?: number;
     thumbnail_url?: string;
+    categories?: Category[];
 }
 
 export type MovieCreateProp = {
@@ -60,6 +61,17 @@ export class MovieController {
             result
         }));
     };
+
+    generateDownloadLink = async (req: Request, res: Response) => {
+        const filename = req.params.key as string;
+        const link = await generateS3FileDownloadLink(filename);
+        return res.status(200).json(ReturnPayload({
+            message: 'Generate Download Link Success!',
+            status_code: res.statusCode,
+            status_message: STATUS_MESSAGE.SUCCESS,
+            result: link
+        }));
+    }
 
     uploadVideo = async (req: Request, res: Response) => {
         // let id: string = req.params.movie_id as string;
@@ -183,8 +195,10 @@ export class MovieController {
             name: body.name,
             url: body.url,
             description: body.description,
-            thumbnail_url: body.thumbnail_url
+            thumbnail_url: body.thumbnail_url,
         });
+
+        await this.addMultiCategoryService(body.categories as Category[], movie_id)
         // return response
         return res.status(200).json(ReturnPayload({
             message: '',
@@ -192,6 +206,16 @@ export class MovieController {
             status_message: STATUS_MESSAGE.SUCCESS,
             result: created
         }));
+    }
+
+    addMultiCategoryService = async (categories: Category[], movie_id: string) => {
+        const movie = await this.movieRepo.findOne({ where: { id: movie_id }, relations: { categories: true } });
+        if (movie !== null) {
+            movie.categories = categories;
+            await this.movieRepo.save(movie)
+        }
+        return movie;
+
     }
 
     addCategory = async (req: Request, res: Response) => {
