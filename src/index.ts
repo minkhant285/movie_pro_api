@@ -15,7 +15,9 @@ import { DecoCategoryRoutes } from './resources/decocategory/routes';
 
 
 const options: cors.CorsOptions = {
-    origin: '*'
+    origin: ['https://mgzaw.com', 'https://api.mgzaw.com'], // Specific allowed origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
 };
 const apiPrefix = '/api/v1';
 export class Server {
