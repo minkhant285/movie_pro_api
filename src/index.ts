@@ -15,10 +15,11 @@ import { DecoCategoryRoutes } from './resources/decocategory/routes';
 
 
 const options: cors.CorsOptions = {
-    origin: ['https://mgzaw.com', 'https://api.mgzaw.com'], // Specific allowed origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+    origin: ['https://mgzaw.com', 'http://localhost:5173', 'http://itverse:5173', 'http://192.168.100.5:5173', 'https://www.mgzaw.com'],  // Allow only your frontend domain
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Specify allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-socket-id'],  // Allow custom headers
 };
+
 const apiPrefix = '/api/v1';
 export class Server {
     public app: express.Application;
@@ -34,6 +35,7 @@ export class Server {
     private config() {
         this.app.set("port", envData.app_port || 50001);
         this.app.use(cors(options));
+        this.app.options('*', cors(options));
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: false }));
     }

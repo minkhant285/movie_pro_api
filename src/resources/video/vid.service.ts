@@ -29,7 +29,10 @@ export class VideoService {
             const res = await this.movieRepo.findAndCount({
                 relations: { categories: true, created_user: true },
                 where: { categories: { id: filter_id } },
-                take: limit, skip
+                take: limit, skip,
+                order: {
+                    created_at: 'DESC'
+                }
             });
             movies = res[0];
             total = res[1];
@@ -37,7 +40,10 @@ export class VideoService {
         } else {
             const res = await this.movieRepo.findAndCount({
                 relations: { categories: true, created_user: true },
-                take: limit, skip
+                take: limit, skip,
+                order: {
+                    created_at: 'DESC'
+                }
             });
             movies = res[0];
             total = res[1];
