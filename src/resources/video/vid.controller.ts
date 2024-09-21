@@ -125,6 +125,24 @@ export class MovieController {
         }));
     };
 
+    vidViewCountAdd = async (req: Request, res: Response) => {
+        const movie_id = req.params.movie_id as string;
+        if (!validate(movie_id)) {
+            return res.status(400).json(ReturnPayload({
+                message: 'Enter Valid Video ID!',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.FAIL,
+            }));
+        }
+        return res.status(200).json(ReturnPayload({
+            message: '',
+            status_code: res.statusCode,
+            status_message: STATUS_MESSAGE.SUCCESS,
+            result: await this.videoService.addViewCount(movie_id)
+        }));
+
+    }
+
     getMoviebyID = async (req: Request, res: Response) => {
         const movie_id = req.params.movie_id as string;
 
@@ -161,9 +179,25 @@ export class MovieController {
         }));
     };
 
+    getMovieByName = async (req: Request, res: Response) => {
+        const query = req.params.query as string;
+        const movies = await this.movieRepo.createQueryBuilder('movie')
+            .leftJoinAndSelect('movie.categories', 'categories') // Include the relation
+            .where('LOWER(movie.name) LIKE LOWER(:name)', { name: query.trim() })
+            .getOne();
+
+        return res.status(200).json(ReturnPayload({
+            message: '',
+            status_code: res.statusCode,
+            status_message: STATUS_MESSAGE.SUCCESS,
+            result: movies
+        }));
+    };
+
     createMovie = async (req: Request, res: Response) => {
         const body = req.body as MovieCreateProp;
         body.created_user = { id: req.params.id as string };
+        body.name = body.name.trim();
         const result = await this.videoService.saveVideo(body);
         // return response
         return res.status(200).json(ReturnPayload({

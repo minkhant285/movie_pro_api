@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Like, Repository } from "typeorm";
 import { Movie } from "./vid.entity";
 import { AppDataSource } from "../../utils";
 import { MovieCreateProp } from "./vid.controller";
@@ -20,20 +20,29 @@ export class VideoService {
         return created;
     }
 
+    addViewCount = async (mv_id: string) => {
+        const movie = await this.movieRepo.findOne({ where: { id: mv_id } });
+        if (movie) {
+            await this.movieRepo.update(mv_id, { view_count: movie.view_count + 1 })
+        }
+        return movie?.view_count;
+    }
 
 
-    getVideosByPage = async (page: number, limit: number, filter_id?: string) => {
+
+    getVideosByPage = async (page: number, limit: number, filter_name?: string) => {
         const skip = (page - 1) * limit;
         let movies, total;
-        if (filter_id) {
-            const res = await this.movieRepo.findAndCount({
-                relations: { categories: true, created_user: true },
-                where: { categories: { id: filter_id } },
-                take: limit, skip,
-                order: {
-                    created_at: 'DESC'
-                }
-            });
+        if (filter_name) {
+            const res = await this.movieRepo
+                .createQueryBuilder('movie')
+                .leftJoinAndSelect('movie.categories', 'category')
+                .leftJoinAndSelect('movie.created_user', 'created_user')
+                .where('LOWER(category.name) LIKE LOWER(:filter_name)', { filter_name: `${filter_name}` })
+                .orderBy('movie.created_at', 'DESC')
+                .skip(skip)
+                .take(limit)
+                .getManyAndCount();
             movies = res[0];
             total = res[1];
 
