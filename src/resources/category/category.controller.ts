@@ -79,7 +79,7 @@ export class CategoryController {
     deleteCategory = async (req: Request, res: Response) => {
         let id: string = req.params.id; // get the user id from req.params
         let deleted = await this.categoryRepo.delete(id);
-        return res.status(204).json({
+        return res.status(200).json({
             data: deleted,
             status: res.statusCode
         });

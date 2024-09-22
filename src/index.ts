@@ -15,7 +15,7 @@ import { DecoCategoryRoutes } from './resources/decocategory/routes';
 
 
 const options: cors.CorsOptions = {
-    origin: ['https://mgzaw.com', 'http://localhost:5173', 'http://itverse:5173', 'http://192.168.100.5:5173', 'https://www.mgzaw.com'],  // Allow only your frontend domain
+    origin: ['https://mgzaw.com', 'http://localhost:5173', 'http://itverse:5173', 'http://localhost:5000', 'http://itverse:5000', 'http://192.168.100.5:5173', 'https://www.mgzaw.com'],  // Allow only your frontend domain
     methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Specify allowed methods
     allowedHeaders: ['Content-Type', 'Authorization', 'x-socket-id'],  // Allow custom headers
 };
@@ -29,7 +29,7 @@ export class Server {
     constructor() {
         this.app = express();
         this.server = http.createServer(this.app);
-        this.io = new SocketServer(this.server, { cors: { origin: '*' } });
+        this.io = new SocketServer(this.server, { cors: { origin: ['https://mgzaw.com', 'http://localhost:5173', 'http://itverse:5173', 'http://localhost:5000', 'http://itverse:5000', 'http://192.168.100.5:5173', 'https://www.mgzaw.com'], } });
     }
 
     private config() {
