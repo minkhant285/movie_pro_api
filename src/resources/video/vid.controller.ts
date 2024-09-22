@@ -41,6 +41,24 @@ export class MovieController {
     }
 
 
+    checkMovieName = async (req: Request, res: Response) => {
+        const movieName = req.params.mv_name as string;
+        const movieCheck = await this.videoService.checkMovieNameExist(movieName);
+        if (movieCheck !== null) {
+            return res.status(200).json(ReturnPayload({
+                message: 'Movie name already Exist',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.FAIL,
+                result: false
+            }));
+        }
+        return res.status(200).json(ReturnPayload({
+            message: 'OK TO CREATE',
+            status_code: res.statusCode,
+            status_message: STATUS_MESSAGE.SUCCESS,
+            result: true
+        }));
+    }
 
 
     getAllMovies = async (req: Request, res: Response) => {
@@ -198,14 +216,24 @@ export class MovieController {
         const body = req.body as MovieCreateProp;
         body.created_user = { id: req.params.id as string };
         body.name = body.name.trim();
-        const result = await this.videoService.saveVideo(body);
-        // return response
-        return res.status(200).json(ReturnPayload({
-            message: '',
-            status_code: res.statusCode,
-            status_message: STATUS_MESSAGE.SUCCESS,
-            result: result
-        }));
+        const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim())
+        if (movieCheck !== null) {
+            return res.status(200).json(ReturnPayload({
+                message: 'Movie name already Exist',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.FAIL,
+                result: false
+            }));
+        } else {
+            const result = await this.videoService.saveVideo(body);
+            // return response
+            return res.status(200).json(ReturnPayload({
+                message: '',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.SUCCESS,
+                result: result
+            }));
+        }
     };
 
     deleteMovie = async (req: Request, res: Response) => {

@@ -17,6 +17,7 @@ export class MovieRoutes {
         this.router.get(`/:movie_id`, this.movieController.getMoviebyID);
         this.router.get(`/category/:category_id`, this.movieController.getMoviebyID);
         this.router.get(`/search/:query`, this.movieController.searchMovie);
+        this.router.get(`/check/:mv_name`, this.movieController.checkMovieName);
         this.router.get(`/get_by_name/:query`, this.movieController.getMovieByName);
         this.router.put(`/:movie_id`, authenticateJWT, this.movieController.updateMovie);
         this.router.delete(`/:movie_id`, authenticateJWT, this.movieController.deleteMovie);

@@ -61,4 +61,9 @@ export class VideoService {
 
     };
 
+    checkMovieNameExist = async (name: string) => {
+        const movieCheck = await this.movieRepo.findOne({ where: { name } });
+        return movieCheck;
+    }
+
 }
