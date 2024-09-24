@@ -195,18 +195,11 @@ export class MovieController {
 
     getMovieByName = async (req: Request, res: Response) => {
         const query = req.params.query as string;
-        let duration;
+
         const movies = await this.movieRepo.createQueryBuilder('movie')
             .leftJoinAndSelect('movie.categories', 'categories') // Include the relation
             .where('LOWER(movie.name) LIKE LOWER(:name)', { name: query.trim() })
             .getOne();
-        if (movies) {
-            const rawDuration = JSON.parse(await getFFMpegVideoDuration(movies.url)) as { Duration: string };
-            const match = rawDuration.Duration.match(/(\d{2}:\d{2}:\d{2}\.\d{2})/);
-            if (match) {
-                duration = match[1];
-            }
-        }
 
 
 
@@ -214,7 +207,7 @@ export class MovieController {
             message: '',
             status_code: res.statusCode,
             status_message: STATUS_MESSAGE.SUCCESS,
-            result: { ...movies, duration }
+            result: movies
         }));
     };
 
