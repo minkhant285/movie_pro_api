@@ -213,12 +213,13 @@ export class MovieController {
 
     createMovie = async (req: Request, res: Response) => {
         const body = req.body as MovieCreateProp;
+        const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { Duration: string };
         body.created_user = { id: req.params.id as string };
+        body.duration = duration.Duration;
         // let duration = '00:00:00';
         const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim());
 
 
-        const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { Duration: string };
         // const match = rawDuration.Duration.match(/(\d{2}:\d{2}:\d{2}\.\d{2})/);
         // if (match) {
         //     duration = match[1] as string;
@@ -233,7 +234,8 @@ export class MovieController {
                 result: false
             }));
         } else {
-            const result = await this.videoService.saveVideo({ ...body, duration: duration.Duration });
+            console.log(body);
+            const result = await this.videoService.saveVideo(body);
             // return response
             return res.status(200).json(ReturnPayload({
                 message: '',
