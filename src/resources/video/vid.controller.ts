@@ -8,6 +8,7 @@ import { generateS3FileDownloadLink, generateThumbnailAndUploadToS3 } from '../.
 import { Server } from '../..';
 import { validate } from 'uuid';
 import { VideoService } from './vid.service';
+import { getFFMpegVideoDuration } from '../../utils/ffmpeg_thumbnail';
 
 export type MovieUpdateProp = {
     name: string;
@@ -24,6 +25,7 @@ export type MovieCreateProp = {
     categories?: Category[];
     favourites?: User[];
     created_user?: Partial<User>;
+    duration: string;
 } & MovieUpdateProp;
 
 export class MovieController {
@@ -92,26 +94,20 @@ export class MovieController {
     }
 
     uploadVideo = async (req: Request, res: Response) => {
-        // let id: string = req.params.movie_id as string;
-        const socketId = req.headers['x-socket-id']; // Get socket ID from headers
-        const server = new Server();
-
-        if (!socketId) {
-            return res.status(400).send('Socket ID is missing');
-        }
 
         const uploadMiddleware = uploadToS3.single('file');
 
         uploadMiddleware(req, res, async (err) => {
+            console.log(JSON.parse(req.body.body).thumbnail_time)
             if (err) {
-                server.io.to(socketId as string).emit('uploadProgress', { progress: 0, error: err.message });
+                // server.io.to(socketId as string).emit('uploadProgress', { progress: 0, error: err.message });
                 return res.status(500).send('File upload failed');
             }
 
             if (req.file) {
                 const fileUrl = (req.file as any).location;
-                server.io.to(socketId as string).emit('uploadProgress', { progress: 100, url: fileUrl });
-                const { s3Url } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string);
+                // server.io.to(socketId as string).emit('uploadProgress', { progress: 100, url: fileUrl });
+                const { s3Url } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string, JSON.parse(req.body.body).thumbnail_time);
                 return res.status(200).json(ReturnPayload({
                     message: 'Video Uploaded!',
                     status_code: res.statusCode,
@@ -123,7 +119,7 @@ export class MovieController {
                 }));
 
             } else {
-                server.io.to(socketId as string).emit('uploadProgress', { progress: 0, error: 'File upload failed' });
+                // server.io.to(socketId as string).emit('uploadProgress', { progress: 0, error: 'File upload failed' });
                 res.status(400).send('File upload failed');
             }
         });
@@ -199,16 +195,26 @@ export class MovieController {
 
     getMovieByName = async (req: Request, res: Response) => {
         const query = req.params.query as string;
+        let duration;
         const movies = await this.movieRepo.createQueryBuilder('movie')
             .leftJoinAndSelect('movie.categories', 'categories') // Include the relation
             .where('LOWER(movie.name) LIKE LOWER(:name)', { name: query.trim() })
             .getOne();
+        if (movies) {
+            const rawDuration = JSON.parse(await getFFMpegVideoDuration(movies.url)) as { Duration: string };
+            const match = rawDuration.Duration.match(/(\d{2}:\d{2}:\d{2}\.\d{2})/);
+            if (match) {
+                duration = match[1];
+            }
+        }
+
+
 
         return res.status(200).json(ReturnPayload({
             message: '',
             status_code: res.statusCode,
             status_message: STATUS_MESSAGE.SUCCESS,
-            result: movies
+            result: { ...movies, duration }
         }));
     };
 
@@ -216,7 +222,17 @@ export class MovieController {
         const body = req.body as MovieCreateProp;
         body.created_user = { id: req.params.id as string };
         body.name = body.name.trim();
-        const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim())
+        let duration = '00:00:00';
+        const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim());
+
+
+        const rawDuration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { Duration: string };
+        const match = rawDuration.Duration.match(/(\d{2}:\d{2}:\d{2}\.\d{2})/);
+        if (match) {
+            duration = match[1] as string;
+        }
+
+
         if (movieCheck !== null) {
             return res.status(200).json(ReturnPayload({
                 message: 'Movie name already Exist',
@@ -225,7 +241,7 @@ export class MovieController {
                 result: false
             }));
         } else {
-            const result = await this.videoService.saveVideo(body);
+            const result = await this.videoService.saveVideo({ ...body, duration });
             // return response
             return res.status(200).json(ReturnPayload({
                 message: '',

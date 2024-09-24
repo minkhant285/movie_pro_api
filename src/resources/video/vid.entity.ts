@@ -13,6 +13,9 @@ export class Movie {
     @Column()
     caption: string;
 
+    @Column({ nullable: true, default: '00:00:00' })
+    duration: string;
+
     @Column({ nullable: true })
     description: string;
 

@@ -20,20 +20,18 @@ export const s3 = new S3Client({
 export async function generateThumbnailAndUploadToS3(
     videoUrl: string,
     s3Key: string,
-    timestamp: string = '10%',
+    timestamp: string = '00:00:05',
 ): Promise<{ s3Url: string; }> {
     const tempDir = os.tmpdir();
     const thumbnailPath = path.join(tempDir, `${s3Key}.png`);
     await generateThumbnail(videoUrl, timestamp, thumbnailPath)
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         // Create a temporary directory to store the thumbnail
-
-
         try {
             // Read the generated thumbnail file into a buffer
             const buffer = fs.readFileSync(thumbnailPath);
 
-            s3.send(new PutObjectCommand({
+            await s3.send(new PutObjectCommand({
                 Bucket: envData.aws_s3_bucket_name,
                 Key: `thumbnails/${s3Key}.png`,
                 Body: buffer,

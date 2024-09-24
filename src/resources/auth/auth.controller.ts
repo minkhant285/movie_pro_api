@@ -52,7 +52,7 @@ export class AuthController {
                     status_message: STATUS_MESSAGE.FAIL
                 }));
             }
-            const token = generateToken({ id: user.id, username: user.username }, '1hr');
+            const token = generateToken({ id: user.id, username: user.username }, '24hr');
             setTimeout(() => {
 
                 res.status(200).json(ReturnPayload({
