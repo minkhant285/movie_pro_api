@@ -25,8 +25,8 @@ export async function generateThumbnail(videoUrl: string, timestamp: string = '0
 
 
 export async function getFFMpegVideoDuration(videoUrl: string): Promise<string> {
-    const unixCommand = `ffmpeg -i ${videoUrl} 2>&1 | grep "Duration" | sed -n 's/.*Duration: \\([0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\).*/{ "Duraion": "\\1" }/p'`;
-    const windowCommand = `for /f "tokens=2 delims= " %a in ('ffmpeg -i ${videoUrl} 2^>^&1 ^| findstr "Duration"') do @echo {"Duration": "%a"}`;
+    const unixCommand = `ffmpeg -i ${videoUrl} 2>&1 | grep "Duration" | sed -n 's/.*Duration: \\([0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\).*/{ "duration": "\\1" }/p'`;
+    const windowCommand = `for /f "tokens=2 delims= " %a in ('ffmpeg -i ${videoUrl} 2^>^&1 ^| findstr "Duration"') do @echo {"duration": "%a"}`;
 
     // Determine OS and run the appropriate command
     const command = os.type() === 'Windows_NT' ? windowCommand : unixCommand;

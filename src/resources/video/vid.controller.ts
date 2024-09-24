@@ -213,9 +213,9 @@ export class MovieController {
 
     createMovie = async (req: Request, res: Response) => {
         const body = req.body as MovieCreateProp;
-        const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { Duration: string };
+        const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { duration: string };
         body.created_user = { id: req.params.id as string };
-        body.duration = duration.Duration;
+        body.duration = duration.duration;
         // let duration = '00:00:00';
         const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim());
 
