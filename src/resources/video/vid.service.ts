@@ -31,6 +31,8 @@ export class VideoService {
 
 
     getVideosByPage = async (page: number, limit: number, filter_name?: string) => {
+        page = page ? page : 1;
+        limit = limit ? limit : 20;
         const skip = (page - 1) * limit;
         let movies, total;
         if (filter_name) {
