@@ -31,7 +31,7 @@ export class Movie {
     @Column({ nullable: true })
     thumbnail_url?: string;
 
-    @ManyToMany(() => Category, (c) => c.movies, { cascade: true })
+    @ManyToMany(() => Category, (c) => c.movies, { cascade: true, onDelete: 'CASCADE' })
     @JoinTable()
     categories: Category[];
 
