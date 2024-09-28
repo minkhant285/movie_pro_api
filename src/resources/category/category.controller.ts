@@ -77,12 +77,24 @@ export class CategoryController {
     };
 
     deleteCategory = async (req: Request, res: Response) => {
-        let id: string = req.params.id; // get the user id from req.params
-        let deleted = await this.categoryRepo.delete(id);
-        return res.status(200).json({
-            data: deleted,
-            status: res.statusCode
-        });
+        const id: string = req.params.id; // get the user id from req.params
+        const deleted = await this.categoryRepo.findOne({ where: { id }, relations: { movies: true } });
+
+        if (deleted && deleted?.movies.length > 0) {
+            return res.status(200).json(ReturnPayload({
+                message: 'Cannot Delete! Please Remove Connected Video First',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.FAIL,
+
+            }))
+        }
+
+        return res.status(200).json(ReturnPayload({
+            message: 'Successfully Deleted!',
+            status_code: res.statusCode,
+            status_message: STATUS_MESSAGE.SUCCESS,
+            result: "Deleted"
+        }));
     };
 
     createCategory = async (req: Request, res: Response) => {
