@@ -1,0 +1,11 @@
+db_host = 127.0.0.1
+db_port = 5432
+app_port = 50001
+db_name = dbname
+db_username = username
+db_pass = pass
+jwt_secret = bryyan
+AWS_S3_BUCKET_NAME = bucketname
+AWS_ACCESS_KEY = accesskey
+AWS_ACCESS_KEY_ID = keyid
+AWS_BUCKET_REGION = region
