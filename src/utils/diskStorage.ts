@@ -2,8 +2,12 @@ import multer from "multer";
 import path from "path";
 import multerS3 from 'multer-s3';
 import { envData } from "./environment";
-import { S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Request } from 'express';
+import fs from 'fs';
+import { s3 } from "./ffmpeg";
+import stream from 'stream';
+
 
 export const uploadToLocal = multer({
     storage: multer.diskStorage({
@@ -11,7 +15,7 @@ export const uploadToLocal = multer({
             let uploadPath;
             if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
                 uploadPath = '/src/assets/images';
-            } else if (file.mimetype === 'video/mp4' || file.mimetype === 'video/mpeg') {
+            } else if (file.mimetype === 'video/mp4' || file.mimetype === 'video/mov' || file.mimetype === 'video/mpeg') {
                 uploadPath = '/src/assets/videos';
             }
             else if (file.mimetype === 'audio/mpeg') {
@@ -28,27 +32,45 @@ export const uploadToLocal = multer({
     })
 })
 
-export const uploadToS3 = multer({
-    storage: multerS3({
-        s3: new S3Client({
-            credentials: {
-                accessKeyId: envData.aws_access_key_id,  // Use environment variables for security
-                secretAccessKey: envData.aws_access_key
-            },
-            region: envData.aws_s3_region  // Example: 'us-east-1
-        }),
-        acl: 'public-read',
-        bucket: envData.aws_s3_bucket_name,  // The name of your S3 bucket
-        metadata: (req: Request, file: Express.Multer.File, cb) => {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: (req: Request, file: Express.Multer.File, cb) => {
-            // Define the key (filename in S3)
-            const fileExtension = path.extname(file.originalname);
-            const filename = `${Date.now().toString()}${fileExtension}`; // Unique filename
-            const key = `videos/${filename}`;
-            cb(null, key);
-        },
+// export const uploadToS3 = multer({
+//     storage: multerS3({
+//         s3: new S3Client({
+//             credentials: {
+//                 accessKeyId: envData.aws_access_key_id,  // Use environment variables for security
+//                 secretAccessKey: envData.aws_access_key
+//             },
+//             region: envData.aws_s3_region  // Example: 'us-east-1
+//         }),
+//         acl: 'public-read',
+//         bucket: envData.aws_s3_bucket_name,  // The name of your S3 bucket
+//         metadata: (req: Request, file: Express.Multer.File, cb) => {
+//             cb(null, { fieldName: file.fieldname });
+//         },
+//         key: (req: Request, file: Express.Multer.File, cb) => {
+//             // Define the key (filename in S3)
+//             const fileExtension = path.extname(file.originalname);
+//             const filename = `${Date.now().toString()}${fileExtension}`; // Unique filename
+//             const key = `videos/${filename}`;
+//             cb(null, key);
+//         },
 
-    })
-});
+//     })
+// });
+
+
+export async function uploadToS3GeneratedHls(bucket: string, key: string, body: stream.Readable) {
+    const uploadParams = {
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: key.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/MP2T',
+    };
+
+    try {
+        await s3.send(new PutObjectCommand(uploadParams));
+        console.log(`File uploaded successfully to ${bucket}/${key}`);
+    } catch (err) {
+        console.error("Error uploading file:", err);
+        throw err;
+    }
+}

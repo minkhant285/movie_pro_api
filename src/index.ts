@@ -5,7 +5,7 @@ import "reflect-metadata"
 import path from 'path';
 import { AppDataSource } from './utils';
 import { AuthRoutes, UserRoutes } from './resources';
-import { swaggerUi, swaggerSpec } from './swagger/swaggerConfig';
+// import { swaggerUi, swaggerSpec } from './swagger/swaggerConfig';
 import { MovieRoutes } from './resources/video/vid.routes';
 import { CategoryRoutes } from './resources/category/category.routes';
 import { Server as SocketServer } from 'socket.io';
@@ -15,7 +15,7 @@ import { DecoCategoryRoutes } from './resources/decocategory/routes';
 
 
 const options: cors.CorsOptions = {
-    origin: ['https://mgzaw.com', 'http://localhost:5173', 'http://itverse:5173', 'http://localhost:5000', 'http://itverse:5000', 'http://192.168.100.5:5173', 'https://www.mgzaw.com'],  // Allow only your frontend domain
+    origin: ['*', 'https://mgzaw.com', 'http://localhost:5173', 'http://localhost:5000', 'http://192.168.100.16:5173', 'http://192.168.100.17:5173', 'https://www.mgzaw.com'],  // Allow only your frontend domain
     methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Specify allowed methods
     allowedHeaders: ['Content-Type', 'Authorization', 'x-socket-id'],  // Allow custom headers
 };

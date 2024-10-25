@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Like, Repository } from 'typeorm';
-import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE, uploadToS3 } from '../../utils';
+import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE, uploadToLocal } from '../../utils';
 import { Movie } from './vid.entity';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
@@ -9,6 +9,7 @@ import { Server } from '../..';
 import { validate } from 'uuid';
 import { VideoService } from './vid.service';
 import { getFFMpegVideoDuration } from '../../utils/ffmpeg_thumbnail';
+import path from 'path';
 
 export type MovieUpdateProp = {
     name: string;
@@ -33,6 +34,8 @@ export class MovieController {
     private cateogryRepo: Repository<Category>;
     private movieRepo: Repository<Movie>;
     private videoService: VideoService;
+    private outputDir = path.join(__dirname, '../../static/hls');
+
 
 
     constructor() {
@@ -95,25 +98,27 @@ export class MovieController {
 
     uploadVideo = async (req: Request, res: Response) => {
 
-        const uploadMiddleware = uploadToS3.single('file');
+        const uploadMiddleware = uploadToLocal.single('file');
 
         uploadMiddleware(req, res, async (err) => {
-            console.log(JSON.parse(req.body.body).thumbnail_time)
             if (err) {
                 // server.io.to(socketId as string).emit('uploadProgress', { progress: 0, error: err.message });
                 return res.status(500).send('File upload failed');
             }
 
             if (req.file) {
-                const fileUrl = (req.file as any).location;
+                const fileUrl = req.file.path;
                 // server.io.to(socketId as string).emit('uploadProgress', { progress: 100, url: fileUrl });
                 const { s3Url } = await generateThumbnailAndUploadToS3(fileUrl, `thumbnail-${Date.now().toString()}` as string, JSON.parse(req.body.body).thumbnail_time);
+                await this.videoService.generateHLSAndUpload(fileUrl, envData.aws_s3_bucket_name);
+
                 return res.status(200).json(ReturnPayload({
                     message: 'Video Uploaded!',
                     status_code: res.statusCode,
                     status_message: STATUS_MESSAGE.SUCCESS,
                     result: {
-                        fileUrl,
+                        fileUrl: `${fileUrl.split('/').pop()?.split('.')[0]}.m3u8`,
+                        duration: JSON.parse(await getFFMpegVideoDuration(fileUrl)) as { duration: string },
                         thumbnail_url: s3Url
                     }
                 }));
@@ -213,18 +218,9 @@ export class MovieController {
 
     createMovie = async (req: Request, res: Response) => {
         const body = req.body as MovieCreateProp;
-        const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { duration: string };
+        // const duration = JSON.parse(await getFFMpegVideoDuration(body.url)) as { duration: string };
         body.created_user = { id: req.params.id as string };
-        body.duration = duration.duration;
-        // let duration = '00:00:00';
         const movieCheck = await this.videoService.checkMovieNameExist(body.name.trim());
-
-
-        // const match = rawDuration.Duration.match(/(\d{2}:\d{2}:\d{2}\.\d{2})/);
-        // if (match) {
-        //     duration = match[1] as string;
-        // }
-
 
         if (movieCheck !== null) {
             return res.status(200).json(ReturnPayload({
@@ -236,6 +232,8 @@ export class MovieController {
         } else {
             console.log(body);
             const result = await this.videoService.saveVideo(body);
+
+
             // return response
             return res.status(200).json(ReturnPayload({
                 message: '',

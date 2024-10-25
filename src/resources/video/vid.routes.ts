@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateJWT, uploadToS3 } from '../../utils';
+import { authenticateJWT } from '../../utils';
 import { MovieController } from './vid.controller';
 export class MovieRoutes {
     public router: Router;
@@ -12,7 +12,7 @@ export class MovieRoutes {
 
     routes() {
         this.router.get(`/`, this.movieController.getAllMovies);
-        this.router.post(`/`, authenticateJWT, this.movieController.createMovie);
+        this.router.post(`/`, this.movieController.createMovie);
         this.router.put(`/add/view/:movie_id`, this.movieController.vidViewCountAdd);
         this.router.get(`/:movie_id`, this.movieController.getMoviebyID);
         this.router.get(`/category/:category_id`, this.movieController.getMoviebyID);
