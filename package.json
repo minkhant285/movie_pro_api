@@ -9,7 +9,8 @@
   },
   "nodemonConfig": {
     "ignore": [
-      "src/static/*"
+      "src/static/*",
+      "src/assets/videos/*"
     ]
   },
   "dependencies": {

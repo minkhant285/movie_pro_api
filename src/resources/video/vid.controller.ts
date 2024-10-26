@@ -35,6 +35,7 @@ export class MovieController {
     private movieRepo: Repository<Movie>;
     private videoService: VideoService;
     private outputDir = path.join(__dirname, '../../static/hls');
+    private vidTempDir = path.join(__dirname, '../../assets/videos');
 
 
 
@@ -231,6 +232,7 @@ export class MovieController {
             }));
         } else {
             const result = await this.videoService.saveVideo(body);
+            this.videoService.cleanUpTempFiles(this.vidTempDir);
 
             // return response
             return res.status(200).json(ReturnPayload({

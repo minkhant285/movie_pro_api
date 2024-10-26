@@ -75,7 +75,7 @@ export class VideoService {
 
     // https://bluemoviepro.s3.ap-southeast-1.amazonaws.com/videos/1729055248848.mp4
 
-    private cleanUpTempFiles(dir: string) {
+    public cleanUpTempFiles(dir: string) {
         fs.rmdirSync(dir, { recursive: true });
         console.log(`Temporary files cleaned up from: ${dir}`);
     }
@@ -83,6 +83,7 @@ export class VideoService {
     async generateHLSAndUpload(inputVideoPath: string, bucketName: string): Promise<void> {
         const baseFileName = path.basename(inputVideoPath, path.extname(inputVideoPath));
         const outputDir = path.join('/tmp', baseFileName); // Use a temporary directory for the files
+
 
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
@@ -121,6 +122,7 @@ export class VideoService {
 
                         // Clean up temporary files
                         this.cleanUpTempFiles(outputDir);
+
                         resolve();
                     } catch (err: any) {
                         // Clean up if upload fails

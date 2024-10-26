@@ -8,7 +8,6 @@ import fs from 'fs';
 import { s3 } from "./ffmpeg";
 import stream from 'stream';
 
-
 export const uploadToLocal = multer({
     storage: multer.diskStorage({
         destination: function (req, file, cb) {
@@ -17,20 +16,51 @@ export const uploadToLocal = multer({
                 uploadPath = '/src/assets/images';
             } else if (file.mimetype === 'video/mp4' || file.mimetype === 'video/quicktime' || file.mimetype === 'video/mpeg') {
                 uploadPath = '/src/assets/videos';
-            }
-            else if (file.mimetype === 'audio/mpeg') {
+            } else if (file.mimetype === 'audio/mpeg') {
                 uploadPath = '/src/assets/musics';
             } else {
                 uploadPath = '/src/assets/files';
             }
-            cb(null, `${process.cwd()}${uploadPath}`)
+
+            const fullPath = path.join(process.cwd(), uploadPath);
+
+            // Check if directory exists, if not, create it
+            if (!fs.existsSync(fullPath)) {
+                fs.mkdirSync(fullPath, { recursive: true });
+            }
+
+            cb(null, fullPath);
         },
         filename: function (req, file, cb) {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-            cb(null, file.fieldname + '-' + uniqueSuffix + path.parse(file.originalname).ext)
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
         }
     })
-})
+});
+
+
+// export const uploadToLocal = multer({
+//     storage: multer.diskStorage({
+//         destination: function (req, file, cb) {
+//             let uploadPath;
+//             if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+//                 uploadPath = '/src/assets/images';
+//             } else if (file.mimetype === 'video/mp4' || file.mimetype === 'video/quicktime' || file.mimetype === 'video/mpeg') {
+//                 uploadPath = '/src/assets/videos';
+//             }
+//             else if (file.mimetype === 'audio/mpeg') {
+//                 uploadPath = '/src/assets/musics';
+//             } else {
+//                 uploadPath = '/src/assets/files';
+//             }
+//             cb(null, `${process.cwd()}${uploadPath}`)
+//         },
+//         filename: function (req, file, cb) {
+//             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+//             cb(null, file.fieldname + '-' + uniqueSuffix + path.parse(file.originalname).ext)
+//         }
+//     })
+// })
 
 // export const uploadToS3 = multer({
 //     storage: multerS3({
