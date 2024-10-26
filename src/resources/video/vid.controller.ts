@@ -231,6 +231,7 @@ export class MovieController {
                 result: false
             }));
         } else {
+            // console.log(body.categories?.map(c => c.movies))
             const result = await this.videoService.saveVideo(body);
             this.videoService.cleanUpTempFiles(this.vidTempDir);
 
@@ -246,17 +247,20 @@ export class MovieController {
 
     deleteMovie = async (req: Request, res: Response) => {
         const movie_id = req.params.movie_id as string;
-        const movie = await this.movieRepo.findOne({ where: { id: movie_id } });
-        const deleted = await this.movieRepo.delete(movie_id);
-        await deleteS3Object(envData.aws_s3_bucket_name, `thumbnails/${movie?.thumbnail_url?.split('/').pop()?.split('.')[0]}.png` as string);
-        await deleteS3Folder(envData.aws_s3_bucket_name, `hls/${movie?.url.split('/').pop()?.split('.')[0]}` as string);
-        // return response
-        return res.status(200).json(ReturnPayload({
-            message: '',
-            status_code: res.statusCode,
-            status_message: STATUS_MESSAGE.SUCCESS,
-            result: deleted
-        }));
+        const movie = await this.movieRepo.findOne({ where: { id: movie_id }, relations: ['categories'] });
+        if (movie) {
+            const deleted = await this.movieRepo.delete(movie_id);
+
+            await deleteS3Object(envData.aws_s3_bucket_name, `thumbnails/${movie?.thumbnail_url?.split('/').pop()?.split('.')[0]}.png` as string);
+            await deleteS3Folder(envData.aws_s3_bucket_name, `hls/${movie?.url.split('/').pop()?.split('.')[0]}` as string);
+            // return response
+            return res.status(200).json(ReturnPayload({
+                message: '',
+                status_code: res.statusCode,
+                status_message: STATUS_MESSAGE.SUCCESS,
+                result: deleted
+            }));
+        }
     };
 
     updateMovie = async (req: Request, res: Response) => {

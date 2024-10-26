@@ -14,7 +14,7 @@ export class Category {
     @Column()
     description: string;
 
-    @ManyToMany(() => Movie, movie => movie.categories)
+    @ManyToMany(() => Movie, movie => movie.categories, { onDelete: 'CASCADE' })
     movies: Movie[];
 
     @CreateDateColumn({ default: () => 'CURRENT_TIMESTAMP', type: 'timestamp' })
