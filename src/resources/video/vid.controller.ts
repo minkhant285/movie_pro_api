@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Like, Repository } from 'typeorm';
-import { AppDataSource, envData, ReturnPayload, STATUS_MESSAGE, uploadToLocal } from '../../utils';
+import { AppDataSource, deleteS3Folder, deleteS3Object, envData, ReturnPayload, STATUS_MESSAGE, uploadToLocal } from '../../utils';
 import { Movie } from './vid.entity';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
@@ -230,9 +230,7 @@ export class MovieController {
                 result: false
             }));
         } else {
-            console.log(body);
             const result = await this.videoService.saveVideo(body);
-
 
             // return response
             return res.status(200).json(ReturnPayload({
@@ -246,7 +244,10 @@ export class MovieController {
 
     deleteMovie = async (req: Request, res: Response) => {
         const movie_id = req.params.movie_id as string;
+        const movie = await this.movieRepo.findOne({ where: { id: movie_id } });
         const deleted = await this.movieRepo.delete(movie_id);
+        await deleteS3Object(envData.aws_s3_bucket_name, `thumbnails/${movie?.thumbnail_url?.split('/').pop()?.split('.')[0]}.png` as string);
+        await deleteS3Folder(envData.aws_s3_bucket_name, `hls/${movie?.url.split('/').pop()?.split('.')[0]}` as string);
         // return response
         return res.status(200).json(ReturnPayload({
             message: '',

@@ -15,6 +15,7 @@ interface IEnvironmentProps {
     aws_access_key_id: string;
     aws_s3_bucket_name: string;
     aws_s3_region: string;
+    obj_end_point: string;
 }
 
 export const envData: IEnvironmentProps = {
@@ -30,5 +31,6 @@ export const envData: IEnvironmentProps = {
     aws_access_key: process.env.AWS_ACCESS_KEY as string,
     aws_access_key_id: process.env.AWS_ACCESS_KEY_ID as string,
     aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME as string,
-    aws_s3_region: process.env.AWS_BUCKET_REGION as string
+    aws_s3_region: process.env.AWS_BUCKET_REGION as string,
+    obj_end_point: process.env.OBJ_END_POINT as string
 }

@@ -9,6 +9,7 @@ import { generateThumbnail } from './ffmpeg_thumbnail';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const s3 = new S3Client({
+    endpoint: envData.obj_end_point,
     region: envData.aws_s3_region,
     credentials: {
         accessKeyId: envData.aws_access_key_id,
@@ -44,7 +45,7 @@ export async function generateThumbnailAndUploadToS3(
             fs.unlinkSync(thumbnailPath);
 
             resolve({
-                s3Url: `https://${envData.aws_s3_bucket_name}.s3.${envData.aws_s3_region}.amazonaws.com/thumbnails/${s3Key}.png`
+                s3Url: `https://${envData.aws_s3_bucket_name}.${envData.aws_s3_region}.cdn.digitaloceanspaces.com/thumbnails/${s3Key}.png`
             });
         } catch (err) {
             console.log("big trouble in capturing", err);

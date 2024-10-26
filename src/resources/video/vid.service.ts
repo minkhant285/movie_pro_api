@@ -28,7 +28,7 @@ export class VideoService {
     addViewCount = async (mv_id: string) => {
         const movie = await this.movieRepo.findOne({ where: { id: mv_id } });
         if (movie) {
-            await this.movieRepo.update(mv_id, { view_count: movie.view_count + 1 })
+            await this.movieRepo.update(mv_id, { view_count: movie.view_count + 5 })
         }
         return movie?.view_count;
     }
